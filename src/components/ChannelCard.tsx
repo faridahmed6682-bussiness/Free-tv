@@ -1,18 +1,74 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Play } from 'lucide-react';
+import { Play, Tv } from 'lucide-react';
 import { Channel } from '../types';
 import { cn } from '../lib/utils';
 
 interface ChannelCardProps {
   channel: Channel;
+  index?: number;
   isActive: boolean;
   onSelect: (channel: Channel) => void;
   isFocused?: boolean;
+  layoutStyle?: 'grid' | 'list';
 }
 
-export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, isActive, onSelect, isFocused }) => {
+export const ChannelCard: React.FC<ChannelCardProps> = ({ 
+  channel, 
+  index,
+  isActive, 
+  onSelect, 
+  isFocused,
+  layoutStyle = 'grid'
+}) => {
   const [imgError, setImgError] = React.useState(false);
+
+  if (layoutStyle === 'list') {
+    return (
+      <motion.button
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => onSelect(channel)}
+        className={cn(
+          "w-full flex items-center justify-between p-4 rounded-xl transition-all duration-300 border-2",
+          "bg-[#121821] border-[#1f2937] hover:border-[#00a3e0]/30",
+          isActive ? "border-red-500 bg-red-500/5" : "",
+          isFocused ? "border-white ring-2 ring-white/20" : ""
+        )}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-black/40 p-2 flex items-center justify-center shrink-0">
+             {!imgError ? (
+                <img
+                    src={channel.logo}
+                    alt=""
+                    className="max-w-full max-h-full object-contain"
+                    onError={() => setImgError(true)}
+                />
+             ) : (
+                <Tv className="w-6 h-6 text-white/20" />
+             )}
+          </div>
+          <div className="text-left">
+            <h3 className={cn(
+                "text-lg font-bold leading-tight",
+                isActive ? "text-white" : "text-white/80"
+            )}>
+              {channel.name}
+            </h3>
+            <p className="text-xs text-white/40 uppercase tracking-widest">{channel.category}</p>
+          </div>
+        </div>
+
+        <div className={cn(
+            "px-3 py-1 rounded-md text-xs font-bold font-mono tracking-tighter",
+            isActive ? "bg-red-500 text-white" : "bg-[#1f2937] text-white/40"
+        )}>
+          CH {index || channel.id.slice(0, 2).toUpperCase()}
+        </div>
+      </motion.button>
+    );
+  }
 
   return (
     <motion.button

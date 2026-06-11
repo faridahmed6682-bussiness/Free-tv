@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ReactPlayer from 'react-player';
+import OriginalReactPlayer from 'react-player';
 import { motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { Channel } from '../types';
@@ -7,9 +7,16 @@ import { Channel } from '../types';
 interface VideoPlayerProps {
   channel: Channel;
   onClose: () => void;
+  embedded?: boolean;
 }
 
-export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, onClose }) => {
+const ReactPlayer = (OriginalReactPlayer as any);
+
+export const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
+  channel, 
+  onClose,
+  embedded = false
+}) => {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,6 +24,41 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, onClose }) =>
     setIsReady(false);
     setError(null);
   }, [channel.url]);
+
+  if (embedded) {
+    return (
+      <div className="w-full h-full bg-black flex items-center justify-center relative">
+        {!isReady && !error && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 bg-black">
+            <div className="w-10 h-10 border-4 border-[#00a3e0] border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
+        
+        {error && (
+          <div className="text-center p-4">
+             <p className="text-red-500 font-bold mb-1">Stream Error</p>
+             <p className="text-white/20 text-xs">Link restricted or broken</p>
+          </div>
+        )}
+
+        {!error && (
+          <ReactPlayer
+            url={channel.url}
+            width="100%"
+            height="100%"
+            playing={true}
+            controls
+            onReady={() => setIsReady(true)}
+            onError={() => setError('Error')}
+            config={{
+                file: { forceHLS: true },
+                youtube: { rel: 0 }
+            } as any}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -76,10 +118,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, onClose }) =>
               file: {
                 forceHLS: true,
               },
-              youtube: {
-                playerVars: { showinfo: 0, rel: 0, autoplay: 1 }
-              }
-            }}
+              youtube: { rel: 0 }
+            } as any}
           />
         )}
       </div>

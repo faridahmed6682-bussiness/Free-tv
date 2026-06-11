@@ -15,5 +15,5 @@
 }
 
 body {
-  @apply antialiased selection:bg-blue-500/30 overflow-hidden;
+  @apply antialiased selection:bg-blue-500/30;
 }

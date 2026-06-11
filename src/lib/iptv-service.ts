@@ -2,11 +2,11 @@
 import { parseM3U, M3UEntry } from './m3u-parser';
 import { Channel } from '../types';
 
-const IPTV_ORG_BASE = 'https://iptv-org.github.io/iptv';
+const IPTV_ORG_BASE = 'https://raw.githubusercontent.com/iptv-org/iptv/master';
 
 export async function fetchIptvOrgChannels(countryCode: string = 'bd'): Promise<Channel[]> {
   try {
-    const targetUrl = `${IPTV_ORG_BASE}/countries/${countryCode}.m3u`;
+    const targetUrl = `${IPTV_ORG_BASE}/streams/${countryCode}.m3u`;
     const response = await fetch(`/api/iptv/proxy?url=${encodeURIComponent(targetUrl)}`);
     if (!response.ok) throw new Error('Failed to fetch playlist');
     const content = await response.text();
