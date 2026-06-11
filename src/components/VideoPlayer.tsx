@@ -25,6 +25,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setError(null);
   }, [channel.url]);
 
+  const proxyUrl = (url: string) => `/api/iptv/proxy?url=${encodeURIComponent(url)}`;
+
   if (embedded) {
     return (
       <div className="w-full h-full bg-black flex items-center justify-center relative">
@@ -37,13 +39,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         {error && (
           <div className="text-center p-4">
              <p className="text-red-500 font-bold mb-1">Stream Error</p>
-             <p className="text-white/20 text-xs">Link restricted or broken</p>
+             <p className="text-white/20 text-xs">Link restricted or broken. Re-trying with proxy...</p>
           </div>
         )}
 
         {!error && (
           <ReactPlayer
-            url={channel.url}
+            url={proxyUrl(channel.url)}
             width="100%"
             height="100%"
             playing={true}
@@ -51,7 +53,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             onReady={() => setIsReady(true)}
             onError={() => setError('Error')}
             config={{
-                file: { forceHLS: true },
+                file: { 
+                  forceHLS: true,
+                  hlsOptions: {
+                    xhrSetup: (xhr: any) => {
+                      xhr.withCredentials = false;
+                    }
+                  }
+                },
                 youtube: { rel: 0 }
             } as any}
           />

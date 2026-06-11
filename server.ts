@@ -7,7 +7,7 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Proxy to fetch M3U to bypass CORS
+  // Proxy to fetch M3U or Stream Manifests to bypass CORS
   app.get("/api/iptv/proxy", async (req, res) => {
     const { url } = req.query;
     if (!url || typeof url !== 'string') {
@@ -17,14 +17,21 @@ async function startServer() {
     try {
       const response = await axios.get(url, {
         headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Referer': new URL(url).origin + '/',
+            'Origin': new URL(url).origin
+        },
+        timeout: 15000
       });
-      res.set('Content-Type', 'text/plain');
+      
+      const contentType = response.headers['content-type'] || 'text/plain';
+      res.set('Content-Type', contentType);
+      res.set('Access-Control-Allow-Origin', '*');
       res.send(response.data);
-    } catch (error) {
-      console.error('Proxy Error:', error);
-      res.status(500).json({ error: "Failed to fetch remote resource" });
+    } catch (error: any) {
+      console.error('Proxy Error:', error.message);
+      res.status(500).json({ error: "Failed to fetch remote resource", details: error.message });
     }
   });
 

@@ -62,7 +62,14 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
 
         <div className="flex items-center gap-2">
           <select 
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            onChange={(e) => {
+              // Current implementation is a UI selector as requested
+              // Future: connect this to HLS quality levels in VideoPlayer
+              console.log("Resolution set to:", e.target.value);
+            }}
             className="bg-[#1f2937] text-[10px] text-white/60 font-bold px-2 py-1 rounded-md border-none focus:ring-0 cursor-pointer hover:bg-[#2d3748] transition-colors"
             defaultValue="auto"
           >
