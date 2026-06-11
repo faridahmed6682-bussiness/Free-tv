@@ -5,7 +5,7 @@ export const CHANNELS: Channel[] = [
     id: 'somoy-tv',
     name: 'Somoy TV',
     logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/f/f6/Somoy_TV_logo.svg/1200px-Somoy_TV_logo.svg.png',
-    url: 'https://www.youtube.com/watch?v=R9KbeB68zEM', // This is a live stream example
+    url: 'https://r3.bebi.me/live/somoy/index.m3u8',
     category: 'News',
     description: 'Somoy TV is a 24-hour Bengali news television channel in Bangladesh.'
   },
@@ -13,9 +13,17 @@ export const CHANNELS: Channel[] = [
     id: 'jamuna-tv',
     name: 'Jamuna TV',
     logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e0/Jamuna_TV_logo.svg/1200px-Jamuna_TV_logo.svg.png',
-    url: 'https://www.youtube.com/watch?v=680D1Jv_7l8',
+    url: 'https://jamuna-tv-live.akamaized.net/hls/live/2012351/jamunatv/index.m3u8',
     category: 'News',
     description: 'Jamuna Television is a 24-hour news channel in Bangladesh.'
+  },
+  {
+    id: 'btv-world',
+    name: 'BTV World',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/BTV_World_logo.svg/1200px-BTV_World_logo.svg.png',
+    url: 'https://btvworld.akamaized.net/hls/live/2034177/btvworld/index.m3u8',
+    category: 'News',
+    description: 'Bangladesh Television World is a state-owned television network.'
   },
   {
     id: 'channel-i',
@@ -24,14 +32,6 @@ export const CHANNELS: Channel[] = [
     url: 'https://www.youtube.com/watch?v=H7tS_L7eZ9w',
     category: 'Entertainment',
     description: 'Channel i is a privately owned television network in Bangladesh.'
-  },
-  {
-    id: 'atn-bangla',
-    name: 'ATN Bangla',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e0/ATN_Bangla_Logo.svg/1200px-ATN_Bangla_Logo.svg.png',
-    url: 'https://www.youtube.com/watch?v=tI8L4W3LwXk',
-    category: 'Entertainment',
-    description: 'ATN Bangla is a Bengali-language digital cable television channel.'
   },
   {
     id: 'independent-tv',
@@ -45,49 +45,25 @@ export const CHANNELS: Channel[] = [
     id: 'tsports',
     name: 'T Sports',
     logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/T_Sports_logo.svg/1200px-T_Sports_logo.svg.png',
-    url: 'https://www.youtube.com/watch?v=L7rN7y8e7y0', // Placeholder
+    url: 'https://tsports-live.akamaized.net/hls/live/2025177/tsports/index.m3u8',
     category: 'Sports',
-    description: 'T Sports is a Bangladeshi sports television network.'
+    description: 'T Sports is the first sports television network of Bangladesh.'
   },
   {
     id: 'ekattor-tv',
     name: 'Ekattor TV',
     logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/b/b8/Ekattor_TV_logo.svg/1200px-Ekattor_TV_logo.svg.png',
-    url: 'https://www.youtube.com/watch?v=R9KbeB68zEM',
+    url: 'https://r3.bebi.me/live/ekattor/index.m3u8',
     category: 'News',
     description: 'Ekattor TV is the first full HD 24-hour news television channel in Bangladesh.'
   },
   {
-    id: 'r-tv',
-    name: 'RTV',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/RTV_logo.svg/1200px-RTV_logo.svg.png',
-    url: 'https://www.youtube.com/watch?v=R9KbeB68zEM',
+    id: 'mohona-tv',
+    name: 'Mohona TV',
+    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/d/d4/Mohona_TV_logo.svg/1200px-Mohona_TV_logo.svg.png',
+    url: 'https://r3.bebi.me/live/mohona/index.m3u8',
     category: 'Entertainment',
-    description: 'RTV is an entertainment television channel in Bangladesh.'
-  },
-  {
-    id: 'boishakhi-tv',
-    name: 'Boishakhi TV',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/1/12/Boishakhi_TV_Logo.svg/1200px-Boishakhi_TV_Logo.svg.png',
-    url: 'https://www.youtube.com/watch?v=R9KbeB68zEM',
-    category: 'Entertainment',
-    description: 'Boishakhi TV is an entertainment channel in Bangladesh.'
-  },
-  {
-    id: 'n-tv',
-    name: 'NTV',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/0/02/NTV_Bangladesh_logo.svg/1200px-NTV_Bangladesh_logo.svg.png',
-    url: 'https://www.youtube.com/watch?v=R9KbeB68zEM',
-    category: 'Entertainment',
-    description: 'NTV is a Bengali-language satellite television channel based in Bangladesh.'
-  },
-  {
-    id: 'masranga-tv',
-    name: 'Maasranga TV',
-    logo: 'https://upload.wikimedia.org/wikipedia/en/thumb/7/75/Maasranga_TV_Logo.svg/1200px-Maasranga_TV_Logo.svg.png',
-    url: 'https://www.youtube.com/watch?v=R9KbeB68zEM',
-    category: 'Entertainment',
-    description: 'Maasranga Television is a family-oriented entertainment television channel in Bangladesh.'
+    description: 'Mohona TV is a Bengali-language satellite television channel.'
   }
 ];
 

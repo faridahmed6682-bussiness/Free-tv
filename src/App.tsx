@@ -19,19 +19,31 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    console.log('App Initialized. Base Channels:', INITIAL_CHANNELS.length);
+  }, []);
+
   // Fetch dynamic channels from iptv-org
   const syncChannels = useCallback(async () => {
+    console.log('Syncing Channels...');
     setIsLoading(true);
     setError(null);
     try {
       const iptvChannels = await fetchIptvOrgChannels('bd');
+      console.log('Fetched from IPTV-org:', iptvChannels.length);
       if (iptvChannels.length > 0) {
-        // Merge with initial, avoiding duplicates by name or URL
-        const existingUrls = new Set(INITIAL_CHANNELS.map(c => c.url));
-        const newChannels = iptvChannels.filter(c => !existingUrls.has(c.url));
-        setChannels([...INITIAL_CHANNELS, ...newChannels]);
+        setChannels(prev => {
+          const existingUrls = new Set(prev.map(c => c.url));
+          const newChannels = iptvChannels.filter(c => !existingUrls.has(c.url));
+          const merged = [...prev, ...newChannels];
+          console.log('Total merged channels:', merged.length);
+          return merged;
+        });
+      } else {
+        console.warn('IPTV-org returned 0 channels');
       }
     } catch (err) {
+      console.error('Sync Error:', err);
       setError('Failed to sync with IPTV-org');
     } finally {
       setIsLoading(false);
@@ -164,6 +176,26 @@ export default function App() {
         </header>
 
         <div className="p-4 md:p-8">
+          {isLoading && channels.length === INITIAL_CHANNELS.length && (
+             <div className="flex flex-col items-center justify-center py-20">
+               <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+               <p className="text-white/40">Syncing live channels...</p>
+             </div>
+          )}
+
+          {!isLoading && filteredChannels.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-white/20">
+              <Search className="w-12 h-12 mb-4 opacity-10" />
+              <p className="text-lg">No channels match your search or category</p>
+              <button 
+                onClick={syncChannels}
+                className="mt-4 px-6 py-2 bg-white/5 hover:bg-white/10 rounded-full text-sm text-white transition-all"
+              >
+                Try Refreshing
+              </button>
+            </div>
+          )}
+
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl md:text-2xl font-bold tracking-tight">Categories</h2>
@@ -189,13 +221,6 @@ export default function App() {
               ))}
             </AnimatePresence>
           </div>
-
-          {filteredChannels.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-20 text-white/20">
-              <Search className="w-12 h-12 mb-4 opacity-10" />
-              <p className="text-lg">No channels match your search</p>
-            </div>
-          )}
         </div>
 
         {/* Footer info for TV users */}

@@ -12,6 +12,8 @@ interface ChannelCardProps {
 }
 
 export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, isActive, onSelect, isFocused }) => {
+  const [imgError, setImgError] = React.useState(false);
+
   return (
     <motion.button
       whileHover={{ scale: 1.05 }}
@@ -26,12 +28,17 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({ channel, isActive, onS
       id={`channel-${channel.id}`}
     >
       <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-black/40 flex items-center justify-center p-4">
-        <img
-          src={channel.logo}
-          alt={channel.name}
-          className="max-w-full max-h-full object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300"
-          referrerPolicy="no-referrer"
-        />
+        {!imgError ? (
+          <img
+            src={channel.logo}
+            alt={channel.name}
+            className="max-w-full max-h-full object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300"
+            referrerPolicy="no-referrer"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <Play className="w-12 h-12 text-white/10" />
+        )}
         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           <Play className="w-8 h-8 text-white fill-white" />
         </div>

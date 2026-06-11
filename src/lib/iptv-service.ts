@@ -6,7 +6,8 @@ const IPTV_ORG_BASE = 'https://iptv-org.github.io/iptv';
 
 export async function fetchIptvOrgChannels(countryCode: string = 'bd'): Promise<Channel[]> {
   try {
-    const response = await fetch(`${IPTV_ORG_BASE}/countries/${countryCode}.m3u`);
+    const targetUrl = `${IPTV_ORG_BASE}/countries/${countryCode}.m3u`;
+    const response = await fetch(`/api/iptv/proxy?url=${encodeURIComponent(targetUrl)}`);
     if (!response.ok) throw new Error('Failed to fetch playlist');
     const content = await response.text();
     const entries = parseM3U(content);
