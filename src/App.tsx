@@ -8,7 +8,7 @@ import { CategoryFilter } from './components/CategoryFilter';
 import { SettingsModal } from './components/SettingsModal';
 import { Channel } from './types';
 import { cn } from './lib/utils';
-import { fetchIptvOrgChannels, fetchCustomM3U, fetchXtreamLive } from './lib/iptv-service';
+import { fetchIptvOrgChannels, fetchCustomM3U, fetchXtreamLive, fetchFeaturedPlaylists } from './lib/iptv-service';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { getUserConfig, saveUserConfig, UserConfig } from './lib/configService';
@@ -59,7 +59,10 @@ export default function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const iptvChannels = await fetchIptvOrgChannels('bd');
+      const [iptvChannels, featuredChannels] = await Promise.all([
+        fetchIptvOrgChannels('bd'),
+        fetchFeaturedPlaylists()
+      ]);
       
       // Check for custom config in Firestore or localStorage
       let customChannels: Channel[] = [];
@@ -90,7 +93,7 @@ export default function App() {
         }
       }
 
-      const allChannels = [...iptvChannels, ...customChannels];
+      const allChannels = [...iptvChannels, ...featuredChannels, ...customChannels];
       
       if (allChannels.length > 0) {
         setChannels(prev => {
@@ -226,13 +229,20 @@ export default function App() {
       {/* Action Buttons */}
       <div className="flex gap-4 px-4 py-4 max-w-lg mx-auto w-full">
         <button 
+          onClick={syncChannels}
+          disabled={isLoading}
+          className="bg-[#121821] hover:bg-[#1f2937] text-white font-bold p-3 rounded-lg border border-[#1f2937] shadow-lg active:scale-95 transition-all flex items-center justify-center"
+        >
+          <RefreshCw className={cn("w-5 h-5", isLoading && "animate-spin")} />
+        </button>
+        <button 
           onClick={() => setIsSettingsOpen(true)}
           className="flex-1 bg-[#238636] hover:bg-[#2ea043] text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase flex items-center justify-center gap-2"
         >
           <Settings className="w-4 h-4" /> ADD IPTV
         </button>
         <button className="flex-1 bg-[#ff3b3b] hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase">
-          FULLSCREEN (OK)
+          FULLSCREEN
         </button>
       </div>
 

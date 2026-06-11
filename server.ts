@@ -9,18 +9,20 @@ async function startServer() {
 
   // Proxy to fetch M3U or Stream Manifests to bypass CORS
   app.get("/api/iptv/proxy", async (req, res) => {
-    const { url } = req.query;
+    const { url, referer } = req.query;
     if (!url || typeof url !== 'string') {
       return res.status(400).json({ error: "URL is required" });
     }
 
     try {
       const parsedUrl = new URL(url);
+      const customReferer = typeof referer === 'string' ? referer : (parsedUrl.origin + '/');
+      
       const response = await axios.get(url, {
         headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': '*/*',
-            'Referer': parsedUrl.origin + '/',
+            'Referer': customReferer,
             'Origin': parsedUrl.origin
         },
         responseType: 'arraybuffer',

@@ -49,7 +49,6 @@ export async function fetchCustomM3U(url: string): Promise<Channel[]> {
 
 export async function fetchXtreamLive(url: string, user: string, pass: string): Promise<Channel[]> {
   try {
-    // Format: http://server.com:port/player_api.php?username=XXX&password=YYY&action=get_live_streams
     const baseUrl = url.replace(/\/$/, "");
     const apiUrl = `${baseUrl}/player_api.php?username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}&action=get_live_streams`;
     
@@ -73,4 +72,36 @@ export async function fetchXtreamLive(url: string, user: string, pass: string): 
     console.error('Error fetching Xtream API:', error);
     throw error;
   }
+}
+
+export async function fetchFeaturedPlaylists(): Promise<Channel[]> {
+  const playlists = [
+    { name: 'Mrgify BDIX', url: 'https://raw.githubusercontent.com/abusaeeidx/Mrgify-BDIX-IPTV/main/playlist.m3u', category: 'Bangladesh' },
+    { name: 'imShakil TV', url: 'https://raw.githubusercontent.com/imShakil/tvlink/main/iptv.m3u8', category: 'Premium Lib' },
+    { name: 'JagoBD Scraper', url: 'https://raw.githubusercontent.com/tahsinulmohsin/jagobd-m3u8-scraper/master/playlist.m3u8', category: 'Public' },
+  ];
+
+  const results = await Promise.allSettled(playlists.map(async (p) => {
+    const response = await fetch(`/api/iptv/proxy?url=${encodeURIComponent(p.url)}`);
+    if (!response.ok) return [];
+    const content = await response.text();
+    const entries = parseM3U(content);
+    return entries.map((entry, index) => ({
+      id: `featured-${p.name.replace(/\s+/g, '-').toLowerCase()}-${index}`,
+      name: entry.name,
+      logo: entry.logo || 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?auto=format&fit=crop&q=80&w=200&h=200',
+      url: entry.url,
+      category: p.category || entry.group || 'Featured',
+      description: `Sourced from ${p.name} on GitHub.`
+    }));
+  }));
+
+  const allFeatured: Channel[] = [];
+  results.forEach(res => {
+    if (res.status === 'fulfilled') {
+      allFeatured.push(...res.value);
+    }
+  });
+
+  return allFeatured;
 }
