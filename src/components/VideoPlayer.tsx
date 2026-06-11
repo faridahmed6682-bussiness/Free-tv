@@ -118,16 +118,21 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       )}
       
       {error && (
-        <div className="text-center p-6 bg-red-500/10 rounded-2xl border border-red-500/20 max-w-sm mx-4">
-           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-           <h3 className="text-white font-bold text-lg mb-2">Streaming Error</h3>
-           <p className="text-white/40 text-sm mb-4">{error}</p>
-           <button 
-             onClick={() => setRetryCount(0)}
-             className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-bold shadow-lg hover:bg-red-600 transition-colors"
-           >
-             RETRY STREAM
-           </button>
+        <div className="absolute inset-0 z-20 bg-[#0d1117] flex items-center justify-center bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] overflow-hidden">
+           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/80" />
+           <div className="relative z-30 text-center p-8 backdrop-blur-md bg-black/40 border border-white/5 rounded-2xl max-w-sm w-full mx-4 shadow-2xl">
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+                 <AlertCircle className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-white font-black text-xl mb-1 tracking-widest uppercase">Off The Air</h3>
+              <p className="text-white/50 text-sm mb-6 font-mono leading-relaxed">{error}</p>
+              <button 
+                onClick={() => setRetryCount(0)}
+                className="w-full py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-bold tracking-widest transition-all uppercase border border-white/10"
+              >
+                Reconnect Signal
+              </button>
+           </div>
         </div>
       )}
 

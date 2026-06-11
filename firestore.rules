@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    function isValidUserConfig(data) {
+      return data.keys().hasAll(['userId', 'configType', 'url', 'updatedAt'])
+        && data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid
+        && data.configType is string && data.configType in ['m3u', 'xtream']
+        && data.url is string && data.url.size() <= 2000
+        && (!('username' in data) || (data.username is string && data.username.size() <= 128))
+        && (!('password' in data) || (data.password is string && data.password.size() <= 128))
+        && data.updatedAt == request.time;
+    }
+
+    match /userConfigs/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() 
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserConfig(incoming())
+        && incoming().keys().size() <= 6;
+      allow update: if isSignedIn() 
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUserConfig(incoming())
+        && incoming().userId == existing().userId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['configType', 'url', 'username', 'password', 'updatedAt'])
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+  }
+}

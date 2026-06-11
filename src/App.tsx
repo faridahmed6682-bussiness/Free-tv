@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Tv, Search, Info, LayoutGrid, MonitorPlay, Settings, RefreshCw, AlertCircle } from 'lucide-react';
+import { Tv, Search, Info, LayoutGrid, MonitorPlay, Settings, RefreshCw, AlertCircle, LogIn, LogOut } from 'lucide-react';
 import { CHANNELS as INITIAL_CHANNELS, CATEGORIES } from './data/channels';
 import { ChannelCard } from './components/ChannelCard';
 import { VideoPlayer } from './components/VideoPlayer';
 import { CategoryFilter } from './components/CategoryFilter';
+import { SettingsModal } from './components/SettingsModal';
 import { Channel } from './types';
 import { cn } from './lib/utils';
-import { fetchIptvOrgChannels } from './lib/iptv-service';
+import { fetchIptvOrgChannels, fetchCustomM3U, fetchXtreamLive } from './lib/iptv-service';
+import { auth } from './lib/firebase';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { getUserConfig, saveUserConfig, UserConfig } from './lib/configService';
 
 export default function App() {
   const [channels, setChannels] = useState<Channel[]>(INITIAL_CHANNELS);
@@ -18,37 +22,127 @@ export default function App() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState(auth.currentUser);
+  
+  // Settings state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log('App Initialized. Base Channels:', INITIAL_CHANNELS.length);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
   }, []);
 
-  // Fetch dynamic channels from iptv-org
+  const handleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      console.error("Login failed:", e);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setChannels(INITIAL_CHANNELS);
+    } catch (e) {
+      console.error("Logout failed:", e);
+    }
+  };
+
+  // Fetch dynamic channels from iptv-org and custom settings
   const syncChannels = useCallback(async () => {
     console.log('Syncing Channels...');
     setIsLoading(true);
     setError(null);
     try {
       const iptvChannels = await fetchIptvOrgChannels('bd');
-      console.log('Fetched from IPTV-org:', iptvChannels.length);
-      if (iptvChannels.length > 0) {
+      
+      // Check for custom config in Firestore or localStorage
+      let customChannels: Channel[] = [];
+      let config: any = null;
+      
+      if (user) {
+         try {
+           config = await getUserConfig();
+         } catch (e) {
+           console.error("Failed to load config from Firestore", e);
+         }
+      } else {
+         const savedConfig = localStorage.getItem('iptvConfig');
+         if (savedConfig) {
+            try { config = JSON.parse(savedConfig); } catch (e) {}
+         }
+      }
+
+      if (config) {
+        try {
+          if (config.configType === 'm3u' || config.type === 'm3u') {
+             customChannels = await fetchCustomM3U(config.url);
+          } else if ((config.configType === 'xtream' || config.type === 'xtream') && config.url && config.username && config.password) {
+             customChannels = await fetchXtreamLive(config.url, config.username, config.password);
+          }
+        } catch (e) {
+          console.error("Failed to load channels from config", e);
+        }
+      }
+
+      const allChannels = [...iptvChannels, ...customChannels];
+      
+      if (allChannels.length > 0) {
         setChannels(prev => {
           const existingUrls = new Set(prev.map(c => c.url));
-          const newChannels = iptvChannels.filter(c => !existingUrls.has(c.url));
+          const newChannels = allChannels.filter(c => !existingUrls.has(c.url));
           const merged = [...prev, ...newChannels];
-          console.log('Total merged channels:', merged.length);
           return merged;
         });
-      } else {
-        console.warn('IPTV-org returned 0 channels');
       }
     } catch (err) {
       console.error('Sync Error:', err);
-      setError('Failed to sync with IPTV-org');
+      setError('Failed to sync channels');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [user]);
+
+  const handleSaveSettings = async (config: any) => {
+    setSettingsError(null);
+    try {
+        let customChannels: Channel[] = [];
+        if (config.type === 'm3u' && config.url) {
+             customChannels = await fetchCustomM3U(config.url);
+        } else if (config.type === 'xtream' && config.url && config.username && config.password) {
+             customChannels = await fetchXtreamLive(config.url, config.username, config.password);
+        }
+        
+        if (customChannels.length > 0) {
+            if (user) {
+              await saveUserConfig({
+                configType: config.type,
+                url: config.url,
+                username: config.username,
+                password: config.password
+              });
+            } else {
+              localStorage.setItem('iptvConfig', JSON.stringify(config));
+            }
+            
+            setChannels(prev => {
+                const existingUrls = new Set(prev.map(c => c.url));
+                const newChannels = customChannels.filter(c => !existingUrls.has(c.url));
+                return [...prev, ...newChannels];
+            });
+            setIsSettingsOpen(false);
+        } else {
+            setSettingsError('No live channels found in the provided config.');
+        }
+    } catch (err: any) {
+        setSettingsError(err.message || 'Failed to authenticate or fetch channels. Check credentials/URL or CORS.');
+    }
+  };
 
   useEffect(() => {
     syncChannels();
@@ -103,20 +197,42 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#0d1117] text-white flex flex-col font-sans selection:bg-red-500/30">
       {/* Top Brand Header */}
-      <header className="pt-6 px-4 pb-2 text-center">
-        <h1 className="text-2xl font-black tracking-tighter flex items-center justify-center gap-2">
-          <span className="text-white">FREETV</span>
-          <span className="text-[#ff3b3b] animate-pulse">FIFA WORLD CUP 2026 LIVE</span>
-        </h1>
+      <header className="pt-8 px-4 pb-6 flex flex-col items-center justify-center relative bg-gradient-to-b from-[#000000] to-transparent">
+        <div className="flex items-center gap-2 mb-3">
+           <Tv className="w-8 h-8 text-[#ff3b3b]" />
+           <h1 className="text-3xl font-black tracking-tighter flex items-center justify-center">
+             <span className="text-white">FREE</span>
+             <span className="text-[#ff3b3b]">TV</span>
+           </h1>
+        </div>
+        <p className="text-white/40 text-[10px] tracking-[0.2em] uppercase font-bold text-center max-w-sm mb-4">
+          Global & Regional Broadcasting Hub
+        </p>
+        
+        {user ? (
+          <div className="flex items-center gap-2">
+            <span className="text-white/60 text-xs">Logged in as {user.email || 'User'}</span>
+            <button onClick={handleLogout} className="text-[#ff3b3b] hover:text-red-400 text-xs flex items-center gap-1 font-bold px-2 py-1 bg-white/5 rounded">
+              <LogOut className="w-3 h-3" /> Logout
+            </button>
+          </div>
+        ) : (
+          <button onClick={handleLogin} className="text-[#00a3e0] hover:text-blue-400 text-xs flex items-center gap-1 font-bold px-3 py-1 bg-white/5 rounded">
+            <LogIn className="w-3 h-3" /> Sign in to sync configs
+          </button>
+        )}
       </header>
 
       {/* Action Buttons */}
       <div className="flex gap-4 px-4 py-4 max-w-lg mx-auto w-full">
+        <button 
+          onClick={() => setIsSettingsOpen(true)}
+          className="flex-1 bg-[#238636] hover:bg-[#2ea043] text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase flex items-center justify-center gap-2"
+        >
+          <Settings className="w-4 h-4" /> ADD IPTV
+        </button>
         <button className="flex-1 bg-[#ff3b3b] hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase">
           FULLSCREEN (OK)
-        </button>
-        <button className="flex-1 bg-[#00a3e0] hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase">
-          SHARE STREAM
         </button>
       </div>
 
@@ -203,6 +319,12 @@ export default function App() {
 
       {/* Persistence / Floating Player for Mobile if needed, 
           but current request wants embedded vertical look */}
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        onSave={handleSaveSettings}
+        error={settingsError} 
+      />
     </div>
   );
 }

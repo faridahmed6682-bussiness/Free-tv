@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "UserConfig": {
+      "title": "UserConfig",
+      "description": "User specific IPTV config like M3U URL or Xtream Codes.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user."
+        },
+        "configType": {
+          "type": "string",
+          "enum": ["m3u", "xtream"],
+          "description": "Type of the configured IPTV."
+        },
+        "url": {
+          "type": "string",
+          "description": "The URL for M3U or Xtream."
+        },
+        "username": {
+          "type": "string",
+          "description": "Optional username for Xtream."
+        },
+        "password": {
+          "type": "string",
+          "description": "Optional password for Xtream."
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp of the last update."
+        }
+      },
+      "required": ["userId", "configType", "url", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "userConfigs/{userId}": {
+      "schema": "UserConfig",
+      "description": "User configurations."
+    }
+  }
+}
