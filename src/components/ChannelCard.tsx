@@ -60,11 +60,24 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           </div>
         </div>
 
-        <div className={cn(
-            "px-3 py-1 rounded-md text-xs font-bold font-mono tracking-tighter",
-            isActive ? "bg-red-500 text-white" : "bg-[#1f2937] text-white/40"
-        )}>
-          CH {index || channel.id.slice(0, 2).toUpperCase()}
+        <div className="flex items-center gap-2">
+          <select 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#1f2937] text-[10px] text-white/60 font-bold px-2 py-1 rounded-md border-none focus:ring-0 cursor-pointer hover:bg-[#2d3748] transition-colors"
+            defaultValue="auto"
+          >
+            <option value="auto">AUTO</option>
+            <option value="1080">1080p</option>
+            <option value="720">720p</option>
+            <option value="480">480p</option>
+          </select>
+
+          <div className={cn(
+              "px-3 py-1 rounded-md text-xs font-bold font-mono tracking-tighter shrink-0",
+              isActive ? "bg-red-500 text-white" : "bg-[#1f2937] text-white/40"
+          )}>
+            CH {index || channel.id.slice(0, 2).toUpperCase()}
+          </div>
         </div>
       </motion.button>
     );

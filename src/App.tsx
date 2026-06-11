@@ -105,7 +105,7 @@ export default function App() {
       {/* Top Brand Header */}
       <header className="pt-6 px-4 pb-2 text-center">
         <h1 className="text-2xl font-black tracking-tighter flex items-center justify-center gap-2">
-          <span className="text-white">TV MAMA</span>
+          <span className="text-white">FREETV</span>
           <span className="text-[#ff3b3b] animate-pulse">FIFA WORLD CUP 2026 LIVE</span>
         </h1>
       </header>
