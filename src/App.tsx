@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Tv, Search, Info, LayoutGrid, MonitorPlay, Settings, RefreshCw, AlertCircle, LogIn, LogOut } from 'lucide-react';
+import { Tv, Search, Info, LayoutGrid, MonitorPlay, Settings, RefreshCw, AlertCircle, LogIn, LogOut, Download } from 'lucide-react';
 import { CHANNELS as INITIAL_CHANNELS, CATEGORIES } from './data/channels';
 import { ChannelCard } from './components/ChannelCard';
 import { VideoPlayer } from './components/VideoPlayer';
@@ -12,6 +12,7 @@ import { fetchIptvOrgChannels, fetchCustomM3U, fetchXtreamLive, fetchFeaturedPla
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { getUserConfig, saveUserConfig, UserConfig } from './lib/configService';
+import { usePWAInstall } from './hooks/usePWAInstall';
 
 const ADMIN_EMAIL = 'faridahmed6682@gmail.com';
 
@@ -21,6 +22,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(0);
+  const channelBuffer = React.useRef("");
+  const bufferTimeout = React.useRef<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState(auth.currentUser);
@@ -28,6 +31,7 @@ export default function App() {
   // Settings state
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
+  const { isInstallable, install } = usePWAInstall();
 
   const isAdmin = useMemo(() => user?.email === ADMIN_EMAIL, [user]);
 
@@ -234,6 +238,29 @@ export default function App() {
 
     const cols = window.innerWidth >= 1280 ? 5 : window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 2;
     
+    // Numeric key support (0-9)
+    if (/^[0-9]$/.test(e.key)) {
+      clearTimeout(bufferTimeout.current);
+      channelBuffer.current += e.key;
+      
+      const channelNum = parseInt(channelBuffer.current);
+      const targetIndex = filteredChannels.findIndex((_, idx) => idx + 1 === channelNum);
+      
+      if (targetIndex !== -1) {
+        setFocusedIndex(targetIndex);
+      }
+
+      bufferTimeout.current = setTimeout(() => {
+        const finalNum = parseInt(channelBuffer.current);
+        const finalIndex = filteredChannels.findIndex((_, idx) => idx + 1 === finalNum);
+        if (finalIndex !== -1) {
+          setActiveChannel(filteredChannels[finalIndex]);
+        }
+        channelBuffer.current = "";
+      }, 1500); // 1.5s window to type 
+      return;
+    }
+
     switch (e.key) {
       case 'ArrowRight':
         setFocusedIndex(prev => Math.min(prev + 1, filteredChannels.length - 1));
@@ -265,21 +292,44 @@ export default function App() {
     setFocusedIndex(0);
   }, [selectedCategory]);
 
+  // Scroll focused element into view for TV navigation
+  useEffect(() => {
+    if (focusedIndex >= 0 && !activeChannel) {
+      const element = document.getElementById(`channel-focus-${focusedIndex}`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [focusedIndex, activeChannel]);
+
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white flex flex-col font-sans selection:bg-red-500/30">
+    <div className="min-h-screen bg-[#0d1117] text-white flex flex-col font-sans selection:bg-red-500/30 overflow-x-hidden">
       {/* Top Brand Header */}
-      <header className="pt-8 px-4 pb-6 flex flex-col items-center justify-center relative bg-gradient-to-b from-[#000000] to-transparent">
+      <header className="pt-8 px-4 pb-6 flex flex-col items-center justify-center relative bg-gradient-to-b from-[#000000] to-transparent w-full">
         {/* Branding & Hidden Admin Trigger */}
-        <div 
-          className="flex items-center gap-2 mb-3 cursor-pointer select-none active:opacity-70 transition-opacity"
-          onDoubleClick={() => !user && handleLogin()}
-          title={!user ? "Double click to manage" : ""}
-        >
-           <Tv className="w-8 h-8 text-[#ff3b3b]" />
-           <h1 className="text-3xl font-black tracking-tighter flex items-center justify-center">
-             <span className="text-white">FREE</span>
-             <span className="text-[#ff3b3b]">TV</span>
-           </h1>
+        <div className="flex flex-wrap items-center justify-center gap-3 mb-3 w-full">
+          <div 
+            className="flex items-center gap-2 cursor-pointer select-none active:opacity-70 transition-opacity"
+            onDoubleClick={() => !user && handleLogin()}
+            title={!user ? "Double click to manage" : ""}
+          >
+             <Tv className="w-7 h-7 md:w-8 md:h-8 text-[#ff3b3b]" />
+             <h1 className="text-2xl md:text-3xl font-black tracking-tighter flex items-center justify-center">
+               <span className="text-white">FREE</span>
+               <span className="text-[#ff3b3b]">TV</span>
+             </h1>
+          </div>
+
+          <button 
+            onClick={install}
+            className={cn(
+              "flex items-center gap-2 bg-[#ff3b3b]/10 text-[#ff3b3b] border border-[#ff3b3b]/20 px-3 py-1.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#ff3b3b] hover:text-white shrink-0",
+              !isInstallable && "opacity-60 cursor-not-allowed"
+            )}
+          >
+            <Download className="w-3 h-3" />
+            Install App
+          </button>
         </div>
         
         <p className="text-white/40 text-[10px] tracking-[0.2em] uppercase font-bold text-center max-w-sm mb-4">
@@ -396,15 +446,16 @@ export default function App() {
           <div className="space-y-3 mt-6">
             <AnimatePresence mode="popLayout">
               {filteredChannels.map((channel, index) => (
-                <ChannelCard
-                  key={channel.id}
-                  channel={channel}
-                  index={index + 1}
-                  isActive={activeChannel?.id === channel.id}
-                  isFocused={focusedIndex === index}
-                  onSelect={setActiveChannel}
-                  layoutStyle="list"
-                />
+                  <div key={channel.id} id={`channel-focus-${index}`}>
+                    <ChannelCard
+                      channel={channel}
+                      index={index + 1}
+                      isActive={activeChannel?.id === channel.id}
+                      isFocused={focusedIndex === index}
+                      onSelect={setActiveChannel}
+                      layoutStyle="list"
+                    />
+                  </div>
               ))}
             </AnimatePresence>
           </div>
