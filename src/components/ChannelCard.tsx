@@ -56,7 +56,14 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
             )}>
               {channel.name}
             </h3>
-            <p className="text-xs text-white/40 uppercase tracking-widest">{channel.category}</p>
+            <p className="text-xs text-white/40 uppercase tracking-widest flex items-center gap-2">
+               {channel.category}
+               {channel.country && (
+                 <span className="px-1.5 py-0.5 bg-white/5 rounded text-[8px] font-bold text-white/20 border border-white/5">
+                   {channel.country}
+                 </span>
+               )}
+            </p>
           </div>
         </div>
 
@@ -122,8 +129,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
       <h3 className="mt-3 text-sm font-medium text-white/90 group-hover:text-white truncate w-full text-center">
         {channel.name}
       </h3>
-      <span className="text-[10px] text-white/40 uppercase tracking-wider mt-1">
+      <span className="text-[10px] text-white/40 uppercase tracking-wider mt-1 flex items-center gap-1">
         {channel.category}
+        {channel.country && <span className="opacity-40">• {channel.country}</span>}
       </span>
     </motion.button>
   );

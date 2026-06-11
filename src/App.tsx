@@ -13,13 +13,14 @@ import { auth } from './lib/firebase';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { getUserConfig, saveUserConfig, UserConfig } from './lib/configService';
 
+const ADMIN_EMAIL = 'faridahmed6682@gmail.com';
+
 export default function App() {
-  const [channels, setChannels] = useState<Channel[]>(INITIAL_CHANNELS);
+  const [channels, setChannels] = useState<Channel[]>(INITIAL_CHANNELS.map(c => ({ ...c, status: 'checking' })));
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeChannel, setActiveChannel] = useState<Channel | null>(null);
   const [focusedIndex, setFocusedIndex] = useState(0);
-  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState(auth.currentUser);
@@ -28,12 +29,59 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsError, setSettingsError] = useState<string | null>(null);
 
+  const isAdmin = useMemo(() => user?.email === ADMIN_EMAIL, [user]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
+
+  // Background Channel Watchdog: Periodically check if channels are alive
+  useEffect(() => {
+    if (channels.length === 0) return;
+
+    const checkChannel = async (channel: Channel) => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+        
+        const response = await fetch(`/api/iptv/proxy?url=${encodeURIComponent(channel.url)}`, {
+          method: 'HEAD', // HEAD request is lighter
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        return response.ok;
+      } catch (e) {
+        return false;
+      }
+    };
+
+    const runWatchdog = async () => {
+      // Check channels that are still 'checking' or haven't been validated
+      const channelsToCheck = channels.filter(c => c.status === 'checking').slice(0, 5);
+      
+      if (channelsToCheck.length === 0) return;
+
+      const results = await Promise.all(channelsToCheck.map(async (c) => ({
+        id: c.id,
+        online: await checkChannel(c)
+      })));
+
+      setChannels(prev => prev.map(c => {
+        const res = results.find(r => r.id === c.id);
+        if (res) {
+          return { ...c, status: res.online ? 'online' : 'offline' };
+        }
+        return c;
+      }));
+    };
+
+    const interval = setInterval(runWatchdog, 3000);
+    return () => clearInterval(interval);
+  }, [channels]);
 
   const handleLogin = async () => {
     try {
@@ -47,7 +95,7 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      setChannels(INITIAL_CHANNELS);
+      setChannels(INITIAL_CHANNELS.map(c => ({ ...c, status: 'checking' })));
     } catch (e) {
       console.error("Logout failed:", e);
     }
@@ -55,25 +103,22 @@ export default function App() {
 
   // Fetch dynamic channels from iptv-org and custom settings
   const syncChannels = useCallback(async () => {
-    console.log('Syncing Channels...');
     setIsLoading(true);
     setError(null);
     try {
-      const [iptvChannels, featuredChannels] = await Promise.all([
+      const [bdChannels, inChannels, featuredChannels] = await Promise.all([
         fetchIptvOrgChannels('bd'),
+        fetchIptvOrgChannels('in'),
         fetchFeaturedPlaylists()
       ]);
       
-      // Check for custom config in Firestore or localStorage
       let customChannels: Channel[] = [];
       let config: any = null;
       
       if (user) {
          try {
            config = await getUserConfig();
-         } catch (e) {
-           console.error("Failed to load config from Firestore", e);
-         }
+         } catch (e) {}
       } else {
          const savedConfig = localStorage.getItem('iptvConfig');
          if (savedConfig) {
@@ -88,30 +133,30 @@ export default function App() {
           } else if ((config.configType === 'xtream' || config.type === 'xtream') && config.url && config.username && config.password) {
              customChannels = await fetchXtreamLive(config.url, config.username, config.password);
           }
-        } catch (e) {
-          console.error("Failed to load channels from config", e);
-        }
+        } catch (e) {}
       }
 
-      const allChannels = [...iptvChannels, ...featuredChannels, ...customChannels];
+      const allFetched = [...bdChannels, ...inChannels, ...featuredChannels, ...customChannels].map(c => ({
+        ...c,
+        status: 'checking' as const
+      }));
       
-      if (allChannels.length > 0) {
+      if (allFetched.length > 0) {
         setChannels(prev => {
           const existingUrls = new Set(prev.map(c => c.url));
-          const newChannels = allChannels.filter(c => !existingUrls.has(c.url));
-          const merged = [...prev, ...newChannels];
-          return merged;
+          const newChannels = allFetched.filter(c => !existingUrls.has(c.url));
+          return [...prev, ...newChannels];
         });
       }
     } catch (err) {
-      console.error('Sync Error:', err);
-      setError('Failed to sync channels');
+      setError('Signal synchronization temporarily occupied.');
     } finally {
       setIsLoading(false);
     }
   }, [user]);
 
   const handleSaveSettings = async (config: any) => {
+    if (!isAdmin) return;
     setSettingsError(null);
     try {
         let customChannels: Channel[] = [];
@@ -135,15 +180,15 @@ export default function App() {
             
             setChannels(prev => {
                 const existingUrls = new Set(prev.map(c => c.url));
-                const newChannels = customChannels.filter(c => !existingUrls.has(c.url));
+                const newChannels = customChannels.filter(c => !existingUrls.has(c.url)).map(c => ({ ...c, status: 'online' as const }));
                 return [...prev, ...newChannels];
             });
             setIsSettingsOpen(false);
         } else {
-            setSettingsError('No live channels found in the provided config.');
+            setSettingsError('No live signals detected.');
         }
     } catch (err: any) {
-        setSettingsError(err.message || 'Failed to authenticate or fetch channels. Check credentials/URL or CORS.');
+        setSettingsError('Signal connection failed. Verify endpoint.');
     }
   };
 
@@ -152,12 +197,35 @@ export default function App() {
   }, [syncChannels]);
 
   const filteredChannels = useMemo(() => {
-    return channels.filter(channel => {
-      const matchesCategory = selectedCategory === 'All' || 
-        channel.category.toLowerCase().includes(selectedCategory.toLowerCase());
-      const matchesSearch = channel.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
+    return channels
+      .filter(channel => {
+        const isLive = channel.status !== 'offline';
+        const matchesCategory = selectedCategory === 'All' || 
+          channel.category.toLowerCase().includes(selectedCategory.toLowerCase());
+        const matchesSearch = channel.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return isLive && matchesCategory && matchesSearch;
+      })
+      .sort((a, b) => {
+        // Priority 1: Status (Online first)
+        if (a.status === 'online' && b.status !== 'online') return -1;
+        if (a.status !== 'online' && b.status === 'online') return 1;
+
+        // Priority 2: Country (Bangladesh > India > Others)
+        const countryPriority = (country?: string) => {
+          if (country === 'Bangladesh') return 3;
+          if (country === 'India') return 2;
+          return 1;
+        };
+
+        const pA = countryPriority(a.country);
+        const pB = countryPriority(b.country);
+
+        if (pA > pB) return -1;
+        if (pA < pB) return 1;
+
+        // Priority 3: Alphabetical name
+        return a.name.localeCompare(b.name);
+      });
   }, [selectedCategory, searchQuery, channels]);
 
   // Handle keyboard navigation for TV
@@ -201,48 +269,64 @@ export default function App() {
     <div className="min-h-screen bg-[#0d1117] text-white flex flex-col font-sans selection:bg-red-500/30">
       {/* Top Brand Header */}
       <header className="pt-8 px-4 pb-6 flex flex-col items-center justify-center relative bg-gradient-to-b from-[#000000] to-transparent">
-        <div className="flex items-center gap-2 mb-3">
+        {/* Branding & Hidden Admin Trigger */}
+        <div 
+          className="flex items-center gap-2 mb-3 cursor-pointer select-none active:opacity-70 transition-opacity"
+          onDoubleClick={() => !user && handleLogin()}
+          title={!user ? "Double click to manage" : ""}
+        >
            <Tv className="w-8 h-8 text-[#ff3b3b]" />
            <h1 className="text-3xl font-black tracking-tighter flex items-center justify-center">
              <span className="text-white">FREE</span>
              <span className="text-[#ff3b3b]">TV</span>
            </h1>
         </div>
+        
         <p className="text-white/40 text-[10px] tracking-[0.2em] uppercase font-bold text-center max-w-sm mb-4">
           Global & Regional Broadcasting Hub
         </p>
         
-        {user ? (
-          <div className="flex items-center gap-2">
-            <span className="text-white/60 text-xs">Logged in as {user.email || 'User'}</span>
-            <button onClick={handleLogout} className="text-[#ff3b3b] hover:text-red-400 text-xs flex items-center gap-1 font-bold px-2 py-1 bg-white/5 rounded">
+        {isAdmin && user && (
+          <div className="flex items-center gap-2 mb-4 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
+            <span className="text-white/60 text-[10px] font-bold uppercase tracking-wider">Admin Center</span>
+            <button onClick={handleLogout} className="text-[#ff3b3b] hover:text-red-400 text-[10px] flex items-center gap-1 font-black uppercase tracking-widest">
               <LogOut className="w-3 h-3" /> Logout
             </button>
           </div>
-        ) : (
-          <button onClick={handleLogin} className="text-[#00a3e0] hover:text-blue-400 text-xs flex items-center gap-1 font-bold px-3 py-1 bg-white/5 rounded">
-            <LogIn className="w-3 h-3" /> Sign in to sync configs
-          </button>
         )}
       </header>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - Admin Only for ADD IPTV */}
       <div className="flex gap-4 px-4 py-4 max-w-lg mx-auto w-full">
         <button 
           onClick={syncChannels}
           disabled={isLoading}
           className="bg-[#121821] hover:bg-[#1f2937] text-white font-bold p-3 rounded-lg border border-[#1f2937] shadow-lg active:scale-95 transition-all flex items-center justify-center"
+          title="Refresh Signals"
         >
           <RefreshCw className={cn("w-5 h-5", isLoading && "animate-spin")} />
         </button>
+        
+        {isAdmin && (
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex-1 bg-[#238636] hover:bg-[#2ea043] text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase flex items-center justify-center gap-2 border border-green-500/20"
+          >
+            <Settings className="w-4 h-4" /> ADMIN PANEL
+          </button>
+        )}
+        
         <button 
-          onClick={() => setIsSettingsOpen(true)}
-          className="flex-1 bg-[#238636] hover:bg-[#2ea043] text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase flex items-center justify-center gap-2"
+          onClick={() => {
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+          }}
+          className={cn(
+            "bg-[#ff3b3b] hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase",
+            isAdmin ? "flex-1" : "flex-[4]"
+          )}
         >
-          <Settings className="w-4 h-4" /> ADD IPTV
-        </button>
-        <button className="flex-1 bg-[#ff3b3b] hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase">
-          FULLSCREEN
+          {isAdmin ? "Fullscreen" : "Maximize Screen"}
         </button>
       </div>
 

@@ -18,7 +18,8 @@ export async function fetchIptvOrgChannels(countryCode: string = 'bd'): Promise<
       logo: entry.logo || 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?auto=format&fit=crop&q=80&w=200&h=200',
       url: entry.url,
       category: entry.group || 'Public',
-      description: `Sourced from iptv-org GitHub repository.`
+      description: `Sourced from iptv-org GitHub repository.`,
+      country: countryCode === 'bd' ? 'Bangladesh' : (countryCode === 'in' ? 'India' : 'International')
     }));
   } catch (error) {
     console.error('Error fetching IPTV-org channels:', error);
@@ -76,9 +77,11 @@ export async function fetchXtreamLive(url: string, user: string, pass: string): 
 
 export async function fetchFeaturedPlaylists(): Promise<Channel[]> {
   const playlists = [
-    { name: 'Mrgify BDIX', url: 'https://raw.githubusercontent.com/abusaeeidx/Mrgify-BDIX-IPTV/main/playlist.m3u', category: 'Bangladesh' },
-    { name: 'imShakil TV', url: 'https://raw.githubusercontent.com/imShakil/tvlink/main/iptv.m3u8', category: 'Premium Lib' },
-    { name: 'JagoBD Scraper', url: 'https://raw.githubusercontent.com/tahsinulmohsin/jagobd-m3u8-scraper/master/playlist.m3u8', category: 'Public' },
+    { name: 'Mrgify BDIX', url: 'https://raw.githubusercontent.com/abusaeeidx/Mrgify-BDIX-IPTV/main/playlist.m3u', country: 'Bangladesh' },
+    { name: 'imShakil TV', url: 'https://raw.githubusercontent.com/imShakil/tvlink/main/iptv.m3u8', country: 'Bangladesh' },
+    { name: 'JagoBD Scraper', url: 'https://raw.githubusercontent.com/tahsinulmohsin/jagobd-m3u8-scraper/master/playlist.m3u8', country: 'Bangladesh' },
+    { name: 'Indian IPTV', url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/in.m3u', country: 'India' },
+    { name: 'Tanish Verma Indian', url: 'https://raw.githubusercontent.com/tanish-verma/tanish-verma/main/IPTV.m3u', country: 'India' }
   ];
 
   const results = await Promise.allSettled(playlists.map(async (p) => {
@@ -91,8 +94,9 @@ export async function fetchFeaturedPlaylists(): Promise<Channel[]> {
       name: entry.name,
       logo: entry.logo || 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?auto=format&fit=crop&q=80&w=200&h=200',
       url: entry.url,
-      category: p.category || entry.group || 'Featured',
-      description: `Sourced from ${p.name} on GitHub.`
+      category: entry.group || 'Featured',
+      description: `Sourced from ${p.name} on GitHub.`,
+      country: p.country
     }));
   }));
 
