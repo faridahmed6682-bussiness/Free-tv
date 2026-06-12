@@ -81,7 +81,7 @@ export async function fetchFeaturedPlaylists(): Promise<Channel[]> {
     { name: 'imShakil TV', url: 'https://raw.githubusercontent.com/imShakil/tvlink/main/iptv.m3u8', country: 'Bangladesh' },
     { name: 'JagoBD Scraper', url: 'https://raw.githubusercontent.com/tahsinulmohsin/jagobd-m3u8-scraper/master/playlist.m3u8', country: 'Bangladesh' },
     { name: 'Indian IPTV', url: 'https://raw.githubusercontent.com/iptv-org/iptv/master/streams/in.m3u', country: 'India' },
-    { name: 'Tanish Verma Indian', url: 'https://raw.githubusercontent.com/tanish-verma/tanish-verma/main/IPTV.m3u', country: 'India' }
+    { name: 'Mirror BD', url: 'https://raw.githubusercontent.com/byte-capsule/IPTV-Bundle/main/Bangladesh.m3u', country: 'Bangladesh' }
   ];
 
   const results = await Promise.allSettled(playlists.map(async (p) => {

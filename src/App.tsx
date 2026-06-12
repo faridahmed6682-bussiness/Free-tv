@@ -6,6 +6,7 @@ import { ChannelCard } from './components/ChannelCard';
 import { VideoPlayer } from './components/VideoPlayer';
 import { CategoryFilter } from './components/CategoryFilter';
 import { SettingsModal } from './components/SettingsModal';
+import { SponsorMarquee } from './components/SponsorMarquee';
 import { Channel } from './types';
 import { cn } from './lib/utils';
 import { fetchIptvOrgChannels, fetchCustomM3U, fetchXtreamLive, fetchFeaturedPlaylists } from './lib/iptv-service';
@@ -303,82 +304,84 @@ export default function App() {
   }, [focusedIndex, activeChannel]);
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white flex flex-col font-sans selection:bg-red-500/30 overflow-x-hidden">
-      {/* Top Brand Header */}
-      <header className="pt-8 px-4 pb-6 flex flex-col items-center justify-center relative bg-gradient-to-b from-[#000000] to-transparent w-full">
-        {/* Branding & Hidden Admin Trigger */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-3 w-full">
-          <div 
-            className="flex items-center gap-2 cursor-pointer select-none active:opacity-70 transition-opacity"
-            onDoubleClick={() => !user && handleLogin()}
-            title={!user ? "Double click to manage" : ""}
-          >
-             <Tv className="w-7 h-7 md:w-8 md:h-8 text-[#ff3b3b]" />
-             <h1 className="text-2xl md:text-3xl font-black tracking-tighter flex items-center justify-center">
-               <span className="text-white">FREE</span>
-               <span className="text-[#ff3b3b]">TV</span>
-             </h1>
-          </div>
+    <div className="min-h-screen bg-[#0d1117] text-white flex flex-col font-sans selection:bg-red-500/30 overflow-hidden w-full fixed inset-0">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-center">
+        {/* Top Brand Header */}
+        <header className="pt-8 px-4 pb-6 flex flex-col items-center justify-center relative bg-gradient-to-b from-[#000000] to-transparent w-full max-w-full">
+          {/* Branding & Action row */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-4 w-full px-2">
+            <div 
+              className="flex items-center gap-2 cursor-pointer select-none active:opacity-70 transition-opacity"
+              onDoubleClick={() => !user && handleLogin()}
+              title={!user ? "Double click to manage" : ""}
+            >
+               <Tv className="w-7 h-7 md:w-8 md:h-8 text-[#ff3b3b]" />
+               <h1 className="text-2xl md:text-3xl font-black tracking-tighter flex items-center justify-center">
+                 <span className="text-white">FREE</span>
+                 <span className="text-[#ff3b3b]">TV</span>
+               </h1>
+            </div>
 
-          <button 
-            onClick={install}
-            className={cn(
-              "flex items-center gap-2 bg-[#ff3b3b]/10 text-[#ff3b3b] border border-[#ff3b3b]/20 px-3 py-1.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#ff3b3b] hover:text-white shrink-0",
-              !isInstallable && "opacity-60 cursor-not-allowed"
-            )}
-          >
-            <Download className="w-3 h-3" />
-            Install App
-          </button>
-        </div>
-        
-        <p className="text-white/40 text-[10px] tracking-[0.2em] uppercase font-bold text-center max-w-sm mb-4">
-          Global & Regional Broadcasting Hub
-        </p>
-        
-        {isAdmin && user && (
-          <div className="flex items-center gap-2 mb-4 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-            <span className="text-white/60 text-[10px] font-bold uppercase tracking-wider">Admin Center</span>
-            <button onClick={handleLogout} className="text-[#ff3b3b] hover:text-red-400 text-[10px] flex items-center gap-1 font-black uppercase tracking-widest">
-              <LogOut className="w-3 h-3" /> Logout
-            </button>
-          </div>
-        )}
-      </header>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={install}
+                className={cn(
+                  "flex items-center gap-2 bg-[#ff3b3b]/10 text-[#ff3b3b] border border-[#ff3b3b]/20 px-3 py-1.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all hover:bg-[#ff3b3b] hover:text-white shrink-0",
+                  !isInstallable && "opacity-60 cursor-not-allowed"
+                )}
+              >
+                <Download className="w-3 h-3" />
+                Install App
+              </button>
 
-      {/* Action Buttons - Admin Only for ADD IPTV */}
-      <div className="flex gap-4 px-4 py-4 max-w-lg mx-auto w-full">
-        <button 
-          onClick={syncChannels}
-          disabled={isLoading}
-          className="bg-[#121821] hover:bg-[#1f2937] text-white font-bold p-3 rounded-lg border border-[#1f2937] shadow-lg active:scale-95 transition-all flex items-center justify-center"
-          title="Refresh Signals"
-        >
-          <RefreshCw className={cn("w-5 h-5", isLoading && "animate-spin")} />
-        </button>
-        
-        {isAdmin && (
-          <button 
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex-1 bg-[#238636] hover:bg-[#2ea043] text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase flex items-center justify-center gap-2 border border-green-500/20"
-          >
-            <Settings className="w-4 h-4" /> ADMIN PANEL
-          </button>
-        )}
-        
-        <button 
-          onClick={() => {
-            const el = document.documentElement;
-            if (el.requestFullscreen) el.requestFullscreen();
-          }}
-          className={cn(
-            "bg-[#ff3b3b] hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase",
-            isAdmin ? "flex-1" : "flex-[4]"
+              <button 
+                onClick={() => {
+                  const el = document.documentElement;
+                  if (el.requestFullscreen) el.requestFullscreen();
+                }}
+                className="bg-[#238636] text-white border border-green-500/20 px-3 py-1.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all hover:bg-green-600 shrink-0 flex items-center gap-2"
+              >
+                <MonitorPlay className="w-3 h-3" />
+                Full Screen
+              </button>
+            </div>
+          </div>
+          
+          <p className="text-white/40 text-[10px] tracking-[0.2em] uppercase font-bold text-center max-w-sm mb-4">
+            Global & Regional Broadcasting Hub
+          </p>
+          
+          {isAdmin && user && (
+            <div className="flex items-center gap-2 mb-4 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
+              <span className="text-white/60 text-[10px] font-bold uppercase tracking-wider">Admin Center</span>
+              <button onClick={handleLogout} className="text-[#ff3b3b] hover:text-red-400 text-[10px] flex items-center gap-1 font-black uppercase tracking-widest">
+                <LogOut className="w-3 h-3" /> Logout
+              </button>
+            </div>
           )}
-        >
-          {isAdmin ? "Fullscreen" : "Maximize Screen"}
-        </button>
-      </div>
+        </header>
+
+        {/* Action Buttons - Pruned */}
+        <div className="flex gap-4 px-4 py-4 max-w-lg mx-auto w-full">
+          <button 
+            onClick={syncChannels}
+            disabled={isLoading}
+            className="flex-1 bg-[#121821] hover:bg-[#1f2937] text-white font-bold p-3 rounded-lg border border-[#1f2937] shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 uppercase text-xs tracking-wider"
+            title="Refresh Signals"
+          >
+            <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+            Sync Signals
+          </button>
+          
+          {isAdmin && (
+            <button 
+              onClick={() => setIsSettingsOpen(true)}
+              className="flex-1 bg-[#238636] hover:bg-[#2ea043] text-white font-bold py-3 px-4 rounded-lg shadow-lg active:scale-95 transition-all text-sm uppercase flex items-center justify-center gap-2 border border-green-500/20"
+            >
+              <Settings className="w-4 h-4" /> ADMIN PANEL
+            </button>
+          )}
+        </div>
 
       {/* Instruction Banner */}
       <div className="px-4 text-center mb-6">
@@ -414,16 +417,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* Dummy Ad / Sponsored Banner */}
-        <div className="w-full bg-[#f8f9fa] rounded-lg overflow-hidden mb-8 border border-white/10">
-            <div className="bg-[#00a3e0] text-white text-[10px] font-bold px-2 py-0.5 inline-block rounded-br-lg">
-                SPONSORED
-            </div>
-            <div className="p-1 h-16 flex items-center justify-center grayscale opacity-80">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_of_Bangladesh_Television.svg/1024px-Logo_of_Bangladesh_Television.svg.png" alt="Ad" className="h-full object-contain" />
-                <span className="text-[#007b33] font-black text-xl ml-2">রাজশাহীর পিওর আম</span>
-            </div>
-        </div>
+        {/* Sponsor Marquee Slider */}
+        <SponsorMarquee />
 
         {/* Search and List Header */}
         <div className="space-y-4">
@@ -469,7 +464,9 @@ export default function App() {
         onClose={() => setIsSettingsOpen(false)} 
         onSave={handleSaveSettings}
         error={settingsError} 
+        isAdmin={isAdmin}
       />
+      </div>
     </div>
   );
 }

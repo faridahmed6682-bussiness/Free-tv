@@ -36,8 +36,8 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           isFocused ? "border-white ring-2 ring-white/20" : ""
         )}
       >
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-black/40 p-2 flex items-center justify-center shrink-0">
+        <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-black/40 p-2 flex items-center justify-center shrink-0">
              {!imgError ? (
                 <img
                     src={channel.logo}
@@ -49,9 +49,9 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
                 <Tv className="w-6 h-6 text-white/20" />
              )}
           </div>
-          <div className="text-left">
+          <div className="text-left overflow-hidden">
             <h3 className={cn(
-                "text-lg font-bold leading-tight",
+                "text-sm md:text-lg font-bold leading-tight truncate",
                 isActive ? "text-white" : "text-white/80"
             )}>
               {channel.name}
@@ -87,10 +87,12 @@ export const ChannelCard: React.FC<ChannelCardProps> = ({
           </select>
 
           <div className={cn(
-              "px-3 py-1 rounded-md text-xs font-bold font-mono tracking-tighter shrink-0",
-              isActive ? "bg-red-500 text-white" : "bg-[#1f2937] text-white/40"
+              "px-3 py-1 rounded-md text-[11px] font-black font-mono tracking-tighter shrink-0 border",
+              isActive 
+                ? "bg-[#ff3b3b] text-white border-[#ff3b3b]" 
+                : "bg-white/5 text-white/40 border-white/10"
           )}>
-            CH {index || channel.id.slice(0, 2).toUpperCase()}
+            #{index || '??'}
           </div>
         </div>
       </motion.button>

@@ -32,12 +32,48 @@
         }
       },
       "required": ["userId", "configType", "url", "updatedAt"]
+    },
+    "Sponsor": {
+      "title": "Sponsor",
+      "description": "Sponsor banner advertisements that marquee on screen.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Sponsor ID."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Image URL of the sponsor logo/banner."
+        },
+        "text": {
+          "type": "string",
+          "description": "Sponsor display text or slogan."
+        },
+        "linkUrl": {
+          "type": "string",
+          "description": "Target destination URL when clicked."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether this sponsor is actively shown in the marquee."
+        },
+        "updatedAt": {
+          "type": "number",
+          "description": "Timestamp of the last update."
+        }
+      },
+      "required": ["id", "imageUrl", "text", "updatedAt"]
     }
   },
   "firestore": {
     "userConfigs/{userId}": {
       "schema": "UserConfig",
       "description": "User configurations."
+    },
+    "sponsors/{sponsorId}": {
+      "schema": "Sponsor",
+      "description": "Sponsor banner advertisements."
     }
   }
 }

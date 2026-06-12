@@ -29,7 +29,7 @@ async function startServer() {
         timeout: 15000
       });
       
-      const contentType = response.headers['content-type'] || 'text/plain';
+      const contentType = String(response.headers['content-type'] || 'text/plain');
       res.set('Content-Type', contentType);
       res.set('Access-Control-Allow-Origin', '*');
       

@@ -1,20 +1,23 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Free TV Portal
 
-# Run and deploy your AI Studio app
+A seamless, high-performance web application designed for streaming live TV channels from Bangladesh, India, and around the world. Optimized specifically for **Mobile** and **Android TV** users.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/93b8b13c-18b7-49af-a4fd-c1b111c97a9a
+- **PWA (Progressive Web App)**: Install directly on your device for a native-like experience.
+- **Android TV Ready**: Full keyboard and remote control navigation support (Arrow keys, Enter, Numeric keys).
+- **Multi-Source IPTV**: Supports M3U playlists and Xtream Codes.
+- **CORS Proxy Integrated**: Bypasses regional and browser restrictions for raw streams.
+- **Responsive Design**: Elegant interface using Tailwind CSS and Motion.
+- **Vercel Optimized**: Ready for deployment with proper routing and metadata.
 
-## Run Locally
+## Android TV Navigation
 
-**Prerequisites:**  Node.js
+- **Arrows**: Navigate between channels.
+- **Enter**: Select and play a channel.
+- **Numeric Keys (0-9)**: Direct channel jumping by number.
+- **Sync Signals**: Refresh playlist data from multiple sources.
 
+## Data Persistence
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+User configurations (Custom M3U/Xtream) are stored securely using **Firebase Firestore** (when logged in) or local storage for anonymous sessions.

@@ -24,6 +24,22 @@ service cloud.firestore {
         && data.updatedAt == request.time;
     }
 
+    function isAdmin() {
+      return isSignedIn() 
+        && request.auth.token.email == 'faridahmed6682@gmail.com'
+        && request.auth.token.email_verified == true;
+    }
+
+    function isValidSponsor(data) {
+      return data.keys().hasAll(['id', 'imageUrl', 'text', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.imageUrl is string && data.imageUrl.size() <= 2000
+        && data.text is string && data.text.size() <= 500
+        && (!('linkUrl' in data) || (data.linkUrl is string && data.linkUrl.size() <= 2000))
+        && (!('isActive' in data) || data.isActive is bool)
+        && data.updatedAt == request.time;
+    }
+
     match /userConfigs/{userId} {
       allow read: if isSignedIn() && request.auth.uid == userId;
       allow create: if isSignedIn() 
@@ -38,6 +54,20 @@ service cloud.firestore {
         && incoming().userId == existing().userId
         && incoming().diff(existing()).affectedKeys().hasOnly(['configType', 'url', 'username', 'password', 'updatedAt'])
       allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /sponsors/{sponsorId} {
+      allow read: if true;
+      allow create: if isAdmin()
+        && isValidId(sponsorId)
+        && isValidSponsor(incoming())
+        && incoming().keys().size() <= 6;
+      allow update: if isAdmin()
+        && isValidId(sponsorId)
+        && isValidSponsor(incoming())
+        && incoming().id == existing().id
+        && incoming().diff(existing()).affectedKeys().hasOnly(['imageUrl', 'text', 'linkUrl', 'isActive', 'updatedAt']);
+      allow delete: if isAdmin();
     }
   }
 }

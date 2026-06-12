@@ -44,7 +44,7 @@ describe('Firestore security rules', () => {
             userId: 'user123',
             configType: 'm3u',
             url: 'https://example.com/playlist.m3u',
-            updatedAt: authenticatedContext.firestore().collection('fake').firestore.FieldValue.serverTimestamp() || 123
+            updatedAt: (authenticatedContext.firestore().collection('fake').firestore as any).FieldValue.serverTimestamp() || 123
         }));
     });
 

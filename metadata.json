@@ -1,6 +1,6 @@
 {
-  "name": "Live TV Portal",
-  "description": "Seamless live TV streaming for Mobile and Android TV with a user-friendly interface.",
+  "name": "Free TV",
+  "description": "Premium live TV streaming portal for Mobile and Android TV. Features M3U/Xtream support, PWA installation, and global channel access.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

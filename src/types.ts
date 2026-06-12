@@ -11,3 +11,12 @@ export interface Channel {
 }
 
 export type Category = 'All' | 'News' | 'Sports' | 'Entertainment' | 'Movies' | 'Music';
+
+export interface Sponsor {
+  id: string;
+  imageUrl: string;
+  text: string;
+  linkUrl?: string;
+  isActive?: boolean;
+  updatedAt?: any;
+}
